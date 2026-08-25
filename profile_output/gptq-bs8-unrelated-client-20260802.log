@@ -1,0 +1,5 @@
+warmup 1: aggregate=45.316 req_median=5.665
+run 1: aggregate=45.037 req_median=5.630
+run 2: aggregate=44.281 req_median=5.535
+run 3: aggregate=45.574 req_median=5.697
+median aggregate=45.037 req_median=5.630

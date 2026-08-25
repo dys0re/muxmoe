@@ -1,0 +1,336 @@
+{
+  "group": "unrelated",
+  "base_url": "http://127.0.0.1:30116",
+  "batch_size": 8,
+  "max_new_tokens": 128,
+  "warmups": [
+    {
+      "aggregate_decode_tps": 45.31604544819235,
+      "aggregate_decode_tokens": 1016,
+      "aggregate_decode_duration_s": 22.420314702030737,
+      "median_request_decode_tps": 5.66465832097504,
+      "min_first_token_to_barrier_s": 0.10925653501180932,
+      "requests": [
+        {
+          "prompt": "In modern history, explain the principal causes of the French Revolution clearly.",
+          "completion_tokens": 128,
+          "ttft_s": 4.05378599796677,
+          "first_token_s": 4.053979029005859,
+          "last_token_s": 26.47434472804889,
+          "decode_tps": 5.664492796628235,
+          "output_preview": "\n\n<think>\n\n</think>\n\nThe French Revolution (1789\u20131799) was not caused by a single event, but rather by a complex convergence of long-term structural issues, imm"
+        },
+        {
+          "prompt": "In bread making, explain how fermentation changes the flavor of sourdough clearly.",
+          "completion_tokens": 128,
+          "ttft_s": 4.053424738987815,
+          "first_token_s": 4.053702059027273,
+          "last_token_s": 26.473132469051052,
+          "decode_tps": 5.664729106731365,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Query:**\n   - **Topic:** Bread making, specifically sourdough\n   - **Focus:** How fermentation chang"
+        },
+        {
+          "prompt": "In mathematics, explain why the square root of two is an irrational number clearly.",
+          "completion_tokens": 128,
+          "ttft_s": 4.053472184052225,
+          "first_token_s": 4.053928038047161,
+          "last_token_s": 26.473296225012746,
+          "decode_tps": 5.664744828707378,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Request:**\n   - **Topic:** Square root of two (\u221a2)\n   - **Claim:** It's an irrational number\n   - **"
+        },
+        {
+          "prompt": "In ecology, explain how nutrient cycling sustains a tropical rainforest clearly.",
+          "completion_tokens": 128,
+          "ttft_s": 4.053518905013334,
+          "first_token_s": 4.053892015013844,
+          "last_token_s": 26.47371385304723,
+          "decode_tps": 5.664630206139949,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Query:**\n   - **Topic:** Ecology\n   - **Specific Concept:** Nutrient cycling\n   - **Ecosystem:** Tro"
+        },
+        {
+          "prompt": "In databases, explain how a B-tree index accelerates SQL query execution clearly.",
+          "completion_tokens": 128,
+          "ttft_s": 4.053211234975606,
+          "first_token_s": 4.053841251006816,
+          "last_token_s": 26.47339932405157,
+          "decode_tps": 5.664696850233337,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Query:**\n   - **Topic:** B-tree index in databases\n   - **Question:** Explain how it accelerates SQL"
+        },
+        {
+          "prompt": "In poetry, explain how imagery supports the central theme of a sonnet clearly.",
+          "completion_tokens": 128,
+          "ttft_s": 4.0534695769893005,
+          "first_token_s": 4.054030026018154,
+          "last_token_s": 26.473629317013547,
+          "decode_tps": 5.66468643581013,
+          "output_preview": "\n\n<think>\n\n</think>\n\nIn a sonnet, imagery supports the central theme by transforming abstract concepts into tangible, sensory experiences, thereby making the th"
+        },
+        {
+          "prompt": "In astronomy, explain why Earth's axial tilt produces seasonal changes clearly.",
+          "completion_tokens": 128,
+          "ttft_s": 4.053068423992954,
+          "first_token_s": 4.053782818024047,
+          "last_token_s": 26.473927204031497,
+          "decode_tps": 5.664548711794268,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Query:** The user asks for an explanation of why Earth's axial tilt produces seasonal changes, speci"
+        },
+        {
+          "prompt": "In bicycle repair, explain how to diagnose a poorly shifting rear derailleur clearly.",
+          "completion_tokens": 128,
+          "ttft_s": 3.9447734910063446,
+          "first_token_s": 3.9447734910063446,
+          "last_token_s": 26.47350819100393,
+          "decode_tps": 5.637245131215186,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Request:**\n   - **Topic:** Bicycle repair\n   - **Specific Issue:** Poorly shifting rear derailleur\n "
+        }
+      ]
+    }
+  ],
+  "runs": [
+    {
+      "aggregate_decode_tps": 45.03654788697108,
+      "aggregate_decode_tokens": 1016,
+      "aggregate_decode_duration_s": 22.559455545968376,
+      "median_request_decode_tps": 5.629650363127089,
+      "min_first_token_to_barrier_s": 0.09154408902395517,
+      "requests": [
+        {
+          "prompt": "In modern history, explain the principal causes of the French Revolution clearly.",
+          "completion_tokens": 128,
+          "ttft_s": 1.2075030690175481,
+          "first_token_s": 1.2104358110227622,
+          "last_token_s": 23.769176079018507,
+          "decode_tps": 5.629746984594519,
+          "output_preview": "\n\n<think>\n\n</think>\n\nThe French Revolution (1789\u20131799) was not caused by a single event, but rather by a complex convergence of long-term structural issues, imm"
+        },
+        {
+          "prompt": "In bread making, explain how fermentation changes the flavor of sourdough clearly.",
+          "completion_tokens": 128,
+          "ttft_s": 1.2100895420298912,
+          "first_token_s": 1.2102142050280236,
+          "last_token_s": 23.769508060009684,
+          "decode_tps": 5.629608835116761,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Query:**\n   - **Topic:** Bread making, specifically sourdough\n   - **Focus:** How fermentation chang"
+        },
+        {
+          "prompt": "In mathematics, explain why the square root of two is an irrational number clearly.",
+          "completion_tokens": 128,
+          "ttft_s": 1.117671703977976,
+          "first_token_s": 1.118891721998807,
+          "last_token_s": 23.769076611031778,
+          "decode_tps": 5.607018248292195,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Request:**\n   - **Topic:** Square root of two (\u221a2)\n   - **Claim:** It's an irrational number\n   - **"
+        },
+        {
+          "prompt": "In ecology, explain how nutrient cycling sustains a tropical rainforest clearly.",
+          "completion_tokens": 128,
+          "ttft_s": 1.2095610899850726,
+          "first_token_s": 1.2103151960182004,
+          "last_token_s": 23.7692762290244,
+          "decode_tps": 5.629691891137418,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Query:**\n   - **Topic:** Ecology\n   - **Specific Concept:** Nutrient cycling\n   - **Ecosystem:** Tro"
+        },
+        {
+          "prompt": "In databases, explain how a B-tree index accelerates SQL query execution clearly.",
+          "completion_tokens": 128,
+          "ttft_s": 1.2079572540242225,
+          "first_token_s": 1.210396105016116,
+          "last_token_s": 23.768972092017066,
+          "decode_tps": 5.629787982769032,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Query:**\n   - **Topic:** B-tree index in databases\n   - **Question:** Explain how it accelerates SQL"
+        },
+        {
+          "prompt": "In poetry, explain how imagery supports the central theme of a sonnet clearly.",
+          "completion_tokens": 128,
+          "ttft_s": 1.2095988019718789,
+          "first_token_s": 1.2102698989911005,
+          "last_token_s": 23.76961136900354,
+          "decode_tps": 5.629596952943767,
+          "output_preview": "\n\n<think>\n\n</think>\n\nIn a sonnet, imagery supports the central theme by transforming abstract concepts into tangible, sensory experiences, thereby making the th"
+        },
+        {
+          "prompt": "In astronomy, explain why Earth's axial tilt produces seasonal changes clearly.",
+          "completion_tokens": 128,
+          "ttft_s": 1.2081686540041119,
+          "first_token_s": 1.2101422200212255,
+          "last_token_s": 23.768838894029614,
+          "decode_tps": 5.629757863907381,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Query:** The user asks for an explanation of why Earth's axial tilt produces seasonal changes, speci"
+        },
+        {
+          "prompt": "In bicycle repair, explain how to diagnose a poorly shifting rear derailleur clearly.",
+          "completion_tokens": 128,
+          "ttft_s": 1.2103565120487474,
+          "first_token_s": 1.2103565120487474,
+          "last_token_s": 23.76989135699114,
+          "decode_tps": 5.629548697386908,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Request:**\n   - **Topic:** Bicycle repair\n   - **Specific Issue:** Poorly shifting rear derailleur\n "
+        }
+      ]
+    },
+    {
+      "aggregate_decode_tps": 44.28055031572912,
+      "aggregate_decode_tokens": 1016,
+      "aggregate_decode_duration_s": 22.944610957987607,
+      "median_request_decode_tps": 5.535096397654256,
+      "min_first_token_to_barrier_s": 0.0939961890107952,
+      "requests": [
+        {
+          "prompt": "In modern history, explain the principal causes of the French Revolution clearly.",
+          "completion_tokens": 128,
+          "ttft_s": 1.1906892190454528,
+          "first_token_s": 1.190800593001768,
+          "last_token_s": 24.134863340004813,
+          "decode_tps": 5.5352010409136785,
+          "output_preview": "\n\n<think>\n\n</think>\n\nThe French Revolution (1789\u20131799) was not caused by a single event, but rather by a complex convergence of long-term structural issues, imm"
+        },
+        {
+          "prompt": "In bread making, explain how fermentation changes the flavor of sourdough clearly.",
+          "completion_tokens": 128,
+          "ttft_s": 1.1907158039975911,
+          "first_token_s": 1.1909033409901895,
+          "last_token_s": 24.135514738969505,
+          "decode_tps": 5.535068683324252,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Query:**\n   - **Topic:** Bread making, specifically sourdough\n   - **Focus:** How fermentation chang"
+        },
+        {
+          "prompt": "In mathematics, explain why the square root of two is an irrational number clearly.",
+          "completion_tokens": 128,
+          "ttft_s": 1.1908614310086705,
+          "first_token_s": 1.191122006974183,
+          "last_token_s": 24.135140832979232,
+          "decode_tps": 5.535211636771172,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Request:**\n   - **Topic:** Square root of two (\u221a2)\n   - **Claim:** It's an irrational number\n   - **"
+        },
+        {
+          "prompt": "In ecology, explain how nutrient cycling sustains a tropical rainforest clearly.",
+          "completion_tokens": 128,
+          "ttft_s": 1.1906226529972628,
+          "first_token_s": 1.1909569099661894,
+          "last_token_s": 24.135399246995803,
+          "decode_tps": 5.535109467229763,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Query:**\n   - **Topic:** Ecology\n   - **Specific Concept:** Nutrient cycling\n   - **Ecosystem:** Tro"
+        },
+        {
+          "prompt": "In databases, explain how a B-tree index accelerates SQL query execution clearly.",
+          "completion_tokens": 128,
+          "ttft_s": 1.1896173830027692,
+          "first_token_s": 1.19105808500899,
+          "last_token_s": 24.135608776006848,
+          "decode_tps": 5.53508332807875,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Query:**\n   - **Topic:** B-tree index in databases\n   - **Question:** Explain how it accelerates SQL"
+        },
+        {
+          "prompt": "In poetry, explain how imagery supports the central theme of a sonnet clearly.",
+          "completion_tokens": 128,
+          "ttft_s": 1.189113622996956,
+          "first_token_s": 1.1910150569747202,
+          "last_token_s": 24.13573296496179,
+          "decode_tps": 5.535042989384116,
+          "output_preview": "\n\n<think>\n\n</think>\n\nIn a sonnet, imagery supports the central theme by transforming abstract concepts into tangible, sensory experiences, thereby making the th"
+        },
+        {
+          "prompt": "In astronomy, explain why Earth's axial tilt produces seasonal changes clearly.",
+          "completion_tokens": 128,
+          "ttft_s": 1.0967127030016854,
+          "first_token_s": 1.0971258179633878,
+          "last_token_s": 24.135022992966697,
+          "decode_tps": 5.512655909316157,
+          "output_preview": "\n\n<think>\n\n</think>\n\nTo explain why Earth's axial tilt produces seasonal changes, we must look at the geometry of Earth's orbit around the Sun and how that geom"
+        },
+        {
+          "prompt": "In bicycle repair, explain how to diagnose a poorly shifting rear derailleur clearly.",
+          "completion_tokens": 128,
+          "ttft_s": 1.1908609899692237,
+          "first_token_s": 1.1908609899692237,
+          "last_token_s": 24.13527922995854,
+          "decode_tps": 5.535115280397675,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Request:**\n   - **Topic:** Bicycle repair\n   - **Specific Issue:** Poorly shifting rear derailleur\n "
+        }
+      ]
+    },
+    {
+      "aggregate_decode_tps": 45.57447822341189,
+      "aggregate_decode_tokens": 1016,
+      "aggregate_decode_duration_s": 22.293178980995435,
+      "median_request_decode_tps": 5.696916344140089,
+      "min_first_token_to_barrier_s": 0.09728067502146587,
+      "requests": [
+        {
+          "prompt": "In modern history, explain the principal causes of the French Revolution clearly.",
+          "completion_tokens": 128,
+          "ttft_s": 1.1972308389958926,
+          "first_token_s": 1.197346264962107,
+          "last_token_s": 23.48969647998456,
+          "decode_tps": 5.697021569059002,
+          "output_preview": "\n\n<think>\n\n</think>\n\nThe French Revolution (1789\u20131799) was not caused by a single event, but rather by a complex convergence of long-term structural issues, imm"
+        },
+        {
+          "prompt": "In bread making, explain how fermentation changes the flavor of sourdough clearly.",
+          "completion_tokens": 128,
+          "ttft_s": 1.197133615030907,
+          "first_token_s": 1.1973933459958062,
+          "last_token_s": 23.490338854957372,
+          "decode_tps": 5.696869440108178,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Query:**\n   - **Topic:** Bread making, specifically sourdough\n   - **Focus:** How fermentation chang"
+        },
+        {
+          "prompt": "In mathematics, explain why the square root of two is an irrational number clearly.",
+          "completion_tokens": 128,
+          "ttft_s": 1.1973221020307392,
+          "first_token_s": 1.1975116379908286,
+          "last_token_s": 23.490090064005926,
+          "decode_tps": 5.696963248171999,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Request:**\n   - **Topic:** Square root of two (\u221a2)\n   - **Claim:** It's an irrational number\n   - **"
+        },
+        {
+          "prompt": "In ecology, explain how nutrient cycling sustains a tropical rainforest clearly.",
+          "completion_tokens": 128,
+          "ttft_s": 1.0990153009770438,
+          "first_token_s": 1.1003171099582687,
+          "last_token_s": 23.48983793699881,
+          "decode_tps": 5.672296472134322,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Query:**\n   - **Topic:** Ecology\n   - **Specific Concept:** Nutrient cycling\n   - **Ecosystem:** Tro"
+        },
+        {
+          "prompt": "In databases, explain how a B-tree index accelerates SQL query execution clearly.",
+          "completion_tokens": 128,
+          "ttft_s": 1.1933812840143219,
+          "first_token_s": 1.1972751219873317,
+          "last_token_s": 23.489570481993724,
+          "decode_tps": 5.697035587813223,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Query:**\n   - **Topic:** B-tree index in databases\n   - **Question:** Explain how it accelerates SQL"
+        },
+        {
+          "prompt": "In poetry, explain how imagery supports the central theme of a sonnet clearly.",
+          "completion_tokens": 128,
+          "ttft_s": 1.1945577900041826,
+          "first_token_s": 1.1974610469769686,
+          "last_token_s": 23.489959527971223,
+          "decode_tps": 5.696983678535424,
+          "output_preview": "\n\n<think>\n\n</think>\n\nIn a sonnet, imagery supports the central theme by transforming abstract concepts into tangible, sensory experiences, thereby making the th"
+        },
+        {
+          "prompt": "In astronomy, explain why Earth's axial tilt produces seasonal changes clearly.",
+          "completion_tokens": 128,
+          "ttft_s": 1.195285903988406,
+          "first_token_s": 1.1975977849797346,
+          "last_token_s": 23.490572579961736,
+          "decode_tps": 5.6968619561973775,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Query:** The user asks for an explanation of why Earth's axial tilt produces seasonal changes, speci"
+        },
+        {
+          "prompt": "In bicycle repair, explain how to diagnose a poorly shifting rear derailleur clearly.",
+          "completion_tokens": 128,
+          "ttft_s": 1.19755439797882,
+          "first_token_s": 1.19755439797882,
+          "last_token_s": 23.49077676597517,
+          "decode_tps": 5.6967986908127894,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Request:**\n   - **Topic:** Bicycle repair\n   - **Specific Issue:** Poorly shifting rear derailleur\n "
+        }
+      ]
+    }
+  ],
+  "median_aggregate_decode_tps": 45.03654788697108,
+  "median_request_decode_tps": 5.629650363127089
+}

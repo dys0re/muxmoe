@@ -1,0 +1,25 @@
+{
+  "populate_copy_count": 32,
+  "admission_copy_count": 12,
+  "h2d_bytes": 8110080,
+  "d2d_bytes": 9732096,
+  "correct": true,
+  "individual": {
+    "host_submit_median_us": 368.154,
+    "host_submit_p90_us": 386.0,
+    "gpu_elapsed_median_us": 1331.2320113182068,
+    "gpu_elapsed_p90_us": 1340.7039642333984
+  },
+  "batched": {
+    "host_submit_median_us": 301.8075,
+    "host_submit_p90_us": 318.775,
+    "gpu_elapsed_median_us": 1320.352017879486,
+    "gpu_elapsed_p90_us": 1331.0400247573853
+  },
+  "batched_prefer_overlap": {
+    "host_submit_median_us": 241.483,
+    "host_submit_p90_us": 255.814,
+    "gpu_elapsed_median_us": 1359.8560094833374,
+    "gpu_elapsed_p90_us": 1371.135950088501
+  }
+}

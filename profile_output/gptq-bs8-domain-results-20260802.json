@@ -1,0 +1,336 @@
+{
+  "group": "domain",
+  "base_url": "http://127.0.0.1:30116",
+  "batch_size": 8,
+  "max_new_tokens": 128,
+  "warmups": [
+    {
+      "aggregate_decode_tps": 65.79836178032632,
+      "aggregate_decode_tokens": 1016,
+      "aggregate_decode_duration_s": 15.44111392000923,
+      "median_request_decode_tps": 8.22492886081107,
+      "min_first_token_to_barrier_s": 0.11941834999015555,
+      "requests": [
+        {
+          "prompt": "In LLM inference systems, explain how KV cache design affects decode throughput.",
+          "completion_tokens": 128,
+          "ttft_s": 3.03737286204705,
+          "first_token_s": 3.0375692390371114,
+          "last_token_s": 18.477735303982627,
+          "decode_tps": 8.225300133807087,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Query:**\n   - **Topic:** LLM inference systems\n   - **Specific Focus:** KV cache design\n   - **Quest"
+        },
+        {
+          "prompt": "In LLM inference systems, explain how continuous batching affects decode throughput.",
+          "completion_tokens": 128,
+          "ttft_s": 3.0375861899810843,
+          "first_token_s": 3.0378775220015086,
+          "last_token_s": 18.478746859997045,
+          "decode_tps": 8.224925502574491,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Query:**\n   - **Topic:** LLM inference systems\n   - **Specific Concept:** Continuous batching\n   - *"
+        },
+        {
+          "prompt": "In LLM inference systems, explain how MoE expert routing affects decode throughput.",
+          "completion_tokens": 128,
+          "ttft_s": 3.0373098669806495,
+          "first_token_s": 3.0379162179888226,
+          "last_token_s": 18.47889542899793,
+          "decode_tps": 8.224866976665027,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Query:**\n   - **Topic:** LLM inference systems\n   - **Specific Mechanism:** Mixture of Experts (MoE)"
+        },
+        {
+          "prompt": "In LLM inference systems, compare tensor parallelism and expert parallelism.",
+          "completion_tokens": 128,
+          "ttft_s": 3.0374599259812385,
+          "first_token_s": 3.037835362018086,
+          "last_token_s": 18.477899919031188,
+          "decode_tps": 8.225354209566095,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Query:** The user wants a comparison between tensor parallelism and expert parallelism in the contex"
+        },
+        {
+          "prompt": "In LLM inference systems, explain how FlashAttention affects decode throughput.",
+          "completion_tokens": 128,
+          "ttft_s": 3.0372799999895506,
+          "first_token_s": 3.0377301090047695,
+          "last_token_s": 18.47858683799859,
+          "decode_tps": 8.22493221904765,
+          "output_preview": " Specifically, describe the mechanism by which it influences memory bandwidth utilization and why this leads to higher throughput during the decoding phase.\n\n1."
+        },
+        {
+          "prompt": "In LLM inference systems, explain how W4A16 quantization affects decode throughput.",
+          "completion_tokens": 128,
+          "ttft_s": 2.9179736049845815,
+          "first_token_s": 2.918497867998667,
+          "last_token_s": 18.478039585985243,
+          "decode_tps": 8.162194125112958,
+          "output_preview": " Specifically, what is the primary bottleneck that limits throughput gains, and what is the maximum observed improvement in decode throughput when using W4A16 q"
+        },
+        {
+          "prompt": "In LLM inference systems, explain how speculative decoding affects decode throughput.",
+          "completion_tokens": 128,
+          "ttft_s": 3.0370982839958742,
+          "first_token_s": 3.0377818110282533,
+          "last_token_s": 18.478440207021777,
+          "decode_tps": 8.225037867099852,
+          "output_preview": " Specifically, what is the relationship between the number of speculative tokens generated per step and the resulting speedup in decode throughput?\n\nSpeculative"
+        },
+        {
+          "prompt": "In LLM inference systems, explain how PCIe expert offload affects decode throughput.",
+          "completion_tokens": 128,
+          "ttft_s": 3.037649446981959,
+          "first_token_s": 3.037649446981959,
+          "last_token_s": 18.479030137998052,
+          "decode_tps": 8.22465312793496,
+          "output_preview": " Specifically, describe the mechanism by which it improves performance and identify the key factors that determine the magnitude of this improvement.\n\nIn large "
+        }
+      ]
+    }
+  ],
+  "runs": [
+    {
+      "aggregate_decode_tps": 67.20187024563471,
+      "aggregate_decode_tokens": 1016,
+      "aggregate_decode_duration_s": 15.118626851995941,
+      "median_request_decode_tps": 8.400629814931225,
+      "min_first_token_to_barrier_s": 0.09420807496644557,
+      "requests": [
+        {
+          "prompt": "In LLM inference systems, explain how KV cache design affects decode throughput.",
+          "completion_tokens": 128,
+          "ttft_s": 1.257412759005092,
+          "first_token_s": 1.2580699140089564,
+          "last_token_s": 16.375811678008176,
+          "decode_tps": 8.40072558339584,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Query:**\n   - **Topic:** LLM inference systems\n   - **Specific Focus:** KV cache design\n   - **Quest"
+        },
+        {
+          "prompt": "In LLM inference systems, explain how continuous batching affects decode throughput.",
+          "completion_tokens": 128,
+          "ttft_s": 1.2540472309920006,
+          "first_token_s": 1.2581250779912807,
+          "last_token_s": 16.376608460966963,
+          "decode_tps": 8.400313495929732,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Query:**\n   - **Topic:** LLM inference systems\n   - **Specific Concept:** Continuous batching\n   - *"
+        },
+        {
+          "prompt": "In LLM inference systems, explain how MoE expert routing affects decode throughput.",
+          "completion_tokens": 128,
+          "ttft_s": 1.2567355479695834,
+          "first_token_s": 1.257965330965817,
+          "last_token_s": 16.37566312798299,
+          "decode_tps": 8.400750015326937,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Query:**\n   - **Topic:** LLM inference systems\n   - **Specific Mechanism:** Mixture of Experts (MoE)"
+        },
+        {
+          "prompt": "In LLM inference systems, compare tensor parallelism and expert parallelism.",
+          "completion_tokens": 128,
+          "ttft_s": 1.2557267249794677,
+          "first_token_s": 1.2582645139773376,
+          "last_token_s": 16.37592689698795,
+          "decode_tps": 8.400769694574205,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Query:** The user wants a comparison between tensor parallelism and expert parallelism in the contex"
+        },
+        {
+          "prompt": "In LLM inference systems, explain how FlashAttention affects decode throughput.",
+          "completion_tokens": 128,
+          "ttft_s": 1.2545125800534151,
+          "first_token_s": 1.25801913801115,
+          "last_token_s": 16.37633714498952,
+          "decode_tps": 8.4004053851347,
+          "output_preview": " Specifically, describe the mechanism by which it influences memory bandwidth utilization and why this leads to higher throughput during the decoding phase.\n\n1."
+        },
+        {
+          "prompt": "In LLM inference systems, explain how W4A16 quantization affects decode throughput.",
+          "completion_tokens": 128,
+          "ttft_s": 1.2563347180257551,
+          "first_token_s": 1.2581719890004024,
+          "last_token_s": 16.37620610400336,
+          "decode_tps": 8.400563131020238,
+          "output_preview": " Specifically, describe the mechanism by which it improves performance and identify the primary hardware-level bottleneck that limits further gains in throughpu"
+        },
+        {
+          "prompt": "In LLM inference systems, explain how speculative decoding affects decode throughput.",
+          "completion_tokens": 128,
+          "ttft_s": 1.2563549269689247,
+          "first_token_s": 1.258316630963236,
+          "last_token_s": 16.37611073500011,
+          "decode_tps": 8.400696498842212,
+          "output_preview": " Specifically, what is the relationship between the number of speculative tokens generated per step and the resulting speedup in decode throughput?\n\nSpeculative"
+        },
+        {
+          "prompt": "In LLM inference systems, explain how PCIe expert offload affects decode throughput.",
+          "completion_tokens": 128,
+          "ttft_s": 1.1641085559967905,
+          "first_token_s": 1.1641085559967905,
+          "last_token_s": 16.376943482959177,
+          "decode_tps": 8.348213900284438,
+          "output_preview": " Specifically, describe the mechanism by which it improves performance and identify the key factors that determine the magnitude of this improvement.\n\nPCIe expe"
+        }
+      ]
+    },
+    {
+      "aggregate_decode_tps": 66.51283109936615,
+      "aggregate_decode_tokens": 1016,
+      "aggregate_decode_duration_s": 15.275248146965168,
+      "median_request_decode_tps": 8.314169973705154,
+      "min_first_token_to_barrier_s": 0.09806015598587692,
+      "requests": [
+        {
+          "prompt": "In LLM inference systems, explain how KV cache design affects decode throughput.",
+          "completion_tokens": 128,
+          "ttft_s": 0.8673852980136871,
+          "first_token_s": 0.8675156180397607,
+          "last_token_s": 16.14252686902182,
+          "decode_tps": 8.31423282859022,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Query:**\n   - **Topic:** LLM inference systems\n   - **Specific Focus:** KV cache design\n   - **Quest"
+        },
+        {
+          "prompt": "In LLM inference systems, explain how continuous batching affects decode throughput.",
+          "completion_tokens": 128,
+          "ttft_s": 0.8670821499545127,
+          "first_token_s": 0.867292187991552,
+          "last_token_s": 16.14262742403662,
+          "decode_tps": 8.314056486323082,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Query:**\n   - **Topic:** LLM inference systems\n   - **Specific Concept:** Continuous batching\n   - *"
+        },
+        {
+          "prompt": "In LLM inference systems, explain how MoE expert routing affects decode throughput.",
+          "completion_tokens": 128,
+          "ttft_s": 0.8671880830079317,
+          "first_token_s": 0.867473072023131,
+          "last_token_s": 16.142715282039717,
+          "decode_tps": 8.314107118820088,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Query:**\n   - **Topic:** LLM inference systems\n   - **Specific Mechanism:** Mixture of Experts (MoE)"
+        },
+        {
+          "prompt": "In LLM inference systems, compare tensor parallelism and expert parallelism.",
+          "completion_tokens": 128,
+          "ttft_s": 0.7691360880271532,
+          "first_token_s": 0.7694925960386172,
+          "last_token_s": 16.142074419010896,
+          "decode_tps": 8.261461962766424,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Query:** The user wants a comparison between tensor parallelism and expert parallelism in the contex"
+        },
+        {
+          "prompt": "In LLM inference systems, explain how FlashAttention affects decode throughput.",
+          "completion_tokens": 128,
+          "ttft_s": 0.8662064659874886,
+          "first_token_s": 0.8675527520244941,
+          "last_token_s": 16.14244258502731,
+          "decode_tps": 8.314298917273021,
+          "output_preview": " Specifically, describe the mechanism by which it influences memory bandwidth utilization and why this leads to higher throughput during the decoding phase.\n\n1."
+        },
+        {
+          "prompt": "In LLM inference systems, explain how W4A16 quantization affects decode throughput.",
+          "completion_tokens": 128,
+          "ttft_s": 0.8642841389519162,
+          "first_token_s": 0.8674236559891142,
+          "last_token_s": 16.142800898989663,
+          "decode_tps": 8.31403362284841,
+          "output_preview": " Specifically, describe the mechanism by which it improves performance and identify the primary hardware-level bottleneck that limits further gains in throughpu"
+        },
+        {
+          "prompt": "In LLM inference systems, explain how speculative decoding affects decode throughput.",
+          "completion_tokens": 128,
+          "ttft_s": 0.8653550039744005,
+          "first_token_s": 0.8672287699882872,
+          "last_token_s": 16.14222094102297,
+          "decode_tps": 8.314243213873764,
+          "output_preview": " Specifically, what is the relationship between the number of speculative tokens generated per step and the resulting speedup in decode throughput?\n\nSpeculative"
+        },
+        {
+          "prompt": "In LLM inference systems, explain how PCIe expert offload affects decode throughput.",
+          "completion_tokens": 128,
+          "ttft_s": 0.8673690829891711,
+          "first_token_s": 0.8673690829891711,
+          "last_token_s": 16.14233443903504,
+          "decode_tps": 8.314257809411862,
+          "output_preview": " Specifically, describe the mechanism by which it improves performance and identify the key factors that determine the magnitude of this improvement.\n\nIn large "
+        }
+      ]
+    },
+    {
+      "aggregate_decode_tps": 66.07387585837006,
+      "aggregate_decode_tokens": 1016,
+      "aggregate_decode_duration_s": 15.37672774301609,
+      "median_request_decode_tps": 8.25936026723524,
+      "min_first_token_to_barrier_s": 0.09528814599616453,
+      "requests": [
+        {
+          "prompt": "In LLM inference systems, explain how KV cache design affects decode throughput.",
+          "completion_tokens": 128,
+          "ttft_s": 0.8746495950035751,
+          "first_token_s": 0.8758519940311089,
+          "last_token_s": 16.25220597803127,
+          "decode_tps": 8.259435242720714,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Query:**\n   - **Topic:** LLM inference systems\n   - **Specific Focus:** KV cache design\n   - **Quest"
+        },
+        {
+          "prompt": "In LLM inference systems, explain how continuous batching affects decode throughput.",
+          "completion_tokens": 128,
+          "ttft_s": 0.8754722729790956,
+          "first_token_s": 0.8760903759975918,
+          "last_token_s": 16.252587431983557,
+          "decode_tps": 8.259358392070174,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Query:**\n   - **Topic:** LLM inference systems\n   - **Specific Concept:** Continuous batching\n   - *"
+        },
+        {
+          "prompt": "In LLM inference systems, explain how MoE expert routing affects decode throughput.",
+          "completion_tokens": 128,
+          "ttft_s": 0.872558283037506,
+          "first_token_s": 0.8759620360215195,
+          "last_token_s": 16.2523085650173,
+          "decode_tps": 8.259439247191203,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Query:**\n   - **Topic:** LLM inference systems\n   - **Specific Mechanism:** Mixture of Experts (MoE)"
+        },
+        {
+          "prompt": "In LLM inference systems, compare tensor parallelism and expert parallelism.",
+          "completion_tokens": 128,
+          "ttft_s": 0.8753471249947324,
+          "first_token_s": 0.876049525977578,
+          "last_token_s": 16.252818119013682,
+          "decode_tps": 8.259212540762062,
+          "output_preview": "\n\n<think>\nHere's a thinking process:\n\n1.  **Understand User Query:** The user wants a comparison between tensor parallelism and expert parallelism in the contex"
+        },
+        {
+          "prompt": "In LLM inference systems, explain how FlashAttention affects decode throughput.",
+          "completion_tokens": 128,
+          "ttft_s": 0.8742227720213123,
+          "first_token_s": 0.8759083100012504,
+          "last_token_s": 16.25269301701337,
+          "decode_tps": 8.259203885587699,
+          "output_preview": " Specifically, describe the mechanism by which it influences memory bandwidth utilization and why this leads to higher throughput during the decoding phase.\n\n1."
+        },
+        {
+          "prompt": "In LLM inference systems, explain how W4A16 quantization affects decode throughput.",
+          "completion_tokens": 128,
+          "ttft_s": 0.8710675079491921,
+          "first_token_s": 0.8757740089786239,
+          "last_token_s": 16.2519208919839,
+          "decode_tps": 8.259546488878089,
+          "output_preview": " Specifically, describe the mechanism by which it improves performance and identify the primary hardware-level bottleneck that limits further gains in throughpu"
+        },
+        {
+          "prompt": "In LLM inference systems, explain how speculative decoding affects decode throughput.",
+          "completion_tokens": 128,
+          "ttft_s": 0.8704017590498552,
+          "first_token_s": 0.8760101700318046,
+          "last_token_s": 16.252500244008843,
+          "decode_tps": 8.259362142400304,
+          "output_preview": " Specifically, what is the relationship between the number of speculative tokens generated per step and the resulting speedup in decode throughput?\n\nSpeculative"
+        },
+        {
+          "prompt": "In LLM inference systems, explain how PCIe expert offload affects decode throughput.",
+          "completion_tokens": 128,
+          "ttft_s": 0.7808022300014272,
+          "first_token_s": 0.7808022300014272,
+          "last_token_s": 16.252072867006063,
+          "decode_tps": 8.208763389881998,
+          "output_preview": " Specifically, describe the mechanism by which it improves performance and identify the key factors that determine the magnitude of this improvement.\n\nPCIe expe"
+        }
+      ]
+    }
+  ],
+  "median_aggregate_decode_tps": 66.51283109936615,
+  "median_request_decode_tps": 8.314169973705154
+}

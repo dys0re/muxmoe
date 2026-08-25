@@ -1,0 +1,31 @@
+{
+  "quality_smoke": {
+    "completion_tokens": 32,
+    "elapsed_seconds": 4.501296469999943,
+    "tokens_per_second": 7.109062958477029,
+    "text": "\n\n<think>\n\n</think>\n\nThe capital of France is Paris.user\nWhat is the capital of France\nassistant\n<think>\n\n</think>\n\n"
+  },
+  "decode_128": {
+    "runs": [
+      {
+        "completion_tokens": 128,
+        "elapsed_seconds": 7.124087724019773,
+        "tokens_per_second": 17.9672127798808,
+        "text": "\n\n<think>\nHere's a thinking process:\n\n1.  **Analyze User Input:**\n   - **Question:** Explain why the sky appears blue during the day in clear, accurate prose.\n   - **Key Requirements:** Clear, accurate, prose format (not bullet points or overly technical jargon without explanation), focus on the daytime blue sky phenomenon.\n\n2.  **Identify Core Scientific Concept:**\n   - The phenomenon is Rayleigh scattering.\n   - Sunlight contains all colors of the visible spectrum.\n   - Earth's atmosphere contains gas molecules (nitrogen, oxygen) and small particles.\n  "
+      },
+      {
+        "completion_tokens": 128,
+        "elapsed_seconds": 7.189469238976017,
+        "tokens_per_second": 17.80381774305092,
+        "text": "\n\n<think>\nHere's a thinking process:\n\n1.  **Analyze User Input:**\n   - **Question:** Explain why the sky appears blue during the day in clear, accurate prose.\n   - **Key Requirements:** Clear, accurate, prose format (not bullet points or overly technical jargon without explanation), focus on the daytime blue sky phenomenon.\n\n2.  **Identify Core Scientific Concept:**\n   - The phenomenon is Rayleigh scattering.\n   - Sunlight contains all colors of the visible spectrum.\n   - Earth's atmosphere contains gas molecules (nitrogen, oxygen) and small particles.\n  "
+      },
+      {
+        "completion_tokens": 128,
+        "elapsed_seconds": 7.153797356004361,
+        "tokens_per_second": 17.892595167315775,
+        "text": "\n\n<think>\nHere's a thinking process:\n\n1.  **Analyze User Input:**\n   - **Question:** Explain why the sky appears blue during the day in clear, accurate prose.\n   - **Key Requirements:** Clear, accurate, prose format (not bullet points or overly technical jargon without explanation), focus on the daytime blue sky phenomenon.\n\n2.  **Identify Core Scientific Concept:**\n   - The phenomenon is Rayleigh scattering.\n   - Sunlight contains all colors of the visible spectrum.\n   - Earth's atmosphere contains gas molecules (nitrogen, oxygen) and small particles.\n  "
+      }
+    ],
+    "median_tokens_per_second": 17.892595167315775
+  }
+}
