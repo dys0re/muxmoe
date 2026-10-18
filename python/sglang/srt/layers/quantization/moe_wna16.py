@@ -40,7 +40,7 @@ if TYPE_CHECKING:
 
 @eager_on_graph(True)
 def _run_cached_moe_wna16(
-    method: "MoeWNA16Method",
+    method: MoeWNA16Method,
     layer: torch.nn.Module,
     hidden_states: torch.Tensor,
     hidden_states_scale: Optional[torch.Tensor],
@@ -69,15 +69,30 @@ def _run_cached_moe_wna16(
         )
 
     expert_cache = layer._moe_expert_cache
+    config = method.moe_runner_config
     prepared_payload = expert_cache.manager.prepare(
         expert_cache,
         dispatch_output,
         is_prefill=forward_mode.is_prefill(),
+        is_decode=forward_mode.is_decode(),
+        allow_overlap=(
+            method.quant_config.weight_bits == 4
+            and not method.quant_config.has_zp
+            and not config.no_combine
+            and not config.apply_router_weight_on_input
+        ),
     )
-    quant_info = method.get_triton_quant_info(
-        layer, dict(prepared_payload.payload)
-    )
-    result = method.runner.run(prepared_payload.dispatch_output, quant_info)
+    if prepared_payload.overlap is not None:
+        from sglang.srt.layers.moe.moe_runner.triton import run_expert_cache_overlap
+
+        result = run_expert_cache_overlap(
+            prepared_payload,
+            lambda payload: method.get_triton_quant_info(layer, payload),
+            config,
+        )
+    else:
+        quant_info = method.get_triton_quant_info(layer, dict(prepared_payload.payload))
+        result = method.runner.run(prepared_payload.dispatch_output, quant_info)
     prepared_payload.mark_kernel_launched()
     return result
 

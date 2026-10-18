@@ -15,7 +15,9 @@ from sglang.srt.layers.moe.expert_cache import (
     modelopt_nvfp4_payload_specs,
     moe_wna16_payload_specs,
     remap_expert_ids,
+    remap_expert_ids_from_cpu,
     remap_single_token_expert_ids,
+    requested_experts_from_cpu,
     select_complete_layers,
 )
 
@@ -259,6 +261,43 @@ def test_single_token_remapping_reuses_cpu_expert_ids():
     assert remapped.tolist() == [[0, 1, 0, 2]]
     with pytest.raises(ValueError, match="missing compact ID for expert 5"):
         remap_single_token_expert_ids(ids, [8, 3, 8, 5], {8: 0, 3: 1})
+
+
+@pytest.mark.parametrize("batch_size", (1, 4, 8))
+def test_cpu_route_snapshot_preserves_all_lanes_and_admission_order(batch_size):
+    ids = torch.tensor([[8, 3, 8, 5]] * batch_size, dtype=torch.int32)
+    cpu_ids = ids.flatten().tolist()
+    requested = requested_experts_from_cpu(
+        cpu_ids, num_experts=10, sort=batch_size != 1
+    )
+    assert requested == ([8, 3, 5] if batch_size == 1 else [3, 5, 8])
+    mapping = {expert: index for index, expert in enumerate(requested)}
+    remapped = remap_expert_ids_from_cpu(ids, cpu_ids, mapping)
+    torch.testing.assert_close(remapped, remap_expert_ids(ids, mapping))
+    assert remapped.dtype == ids.dtype
+
+
+def test_cpu_route_snapshot_rejects_invalid_original_ids_and_missing_mapping():
+    for invalid in (-1, 4):
+        with pytest.raises(ValueError, match="expert IDs must be"):
+            requested_experts_from_cpu([0, invalid], num_experts=4, sort=True)
+    ids = torch.tensor([[0, 1]])
+    with pytest.raises(ValueError, match="routing tensor size"):
+        remap_expert_ids_from_cpu(ids, [0], {0: 0})
+    with pytest.raises(ValueError, match="missing compact ID"):
+        remap_expert_ids_from_cpu(ids, [0, 1], {0: 0})
+    empty = torch.empty((0, 2), dtype=torch.int64)
+    assert remap_expert_ids_from_cpu(empty, [], {}).shape == (0, 2)
+
+
+def test_server_args_validates_expert_execution_mode():
+    from sglang.srt.server_args import ServerArgs
+
+    args = ServerArgs(model_path="dummy")
+    assert args.moe_expert_cache_execution == "serial"
+    args.moe_expert_cache_execution = "invalid"
+    with pytest.raises(ValueError, match="moe-expert-cache-execution"):
+        args._handle_moe_expert_offload()
 
 
 def test_cross_layer_router_prediction_queues_unique_experts():

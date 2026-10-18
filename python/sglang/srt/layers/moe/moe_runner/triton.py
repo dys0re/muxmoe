@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, List, Mapping, Optional
 
 import torch
 
@@ -19,6 +19,7 @@ from sglang.srt.layers.moe.utils import MoeRunnerBackend
 from sglang.srt.utils import is_cuda, is_gfx95_supported, is_hip
 
 if TYPE_CHECKING:
+    from sglang.srt.layers.moe.expert_cache import PreparedExpertPayload
     from sglang.srt.layers.moe.token_dispatcher.standard import (
         StandardCombineInput,
         StandardDispatchOutput,
@@ -170,6 +171,58 @@ class TritonRunnerCore(MoeRunnerCore):
     @property
     def runner_backend(self) -> MoeRunnerBackend:
         return MoeRunnerBackend.TRITON
+
+
+def run_expert_cache_overlap(
+    prepared: PreparedExpertPayload,
+    quant_info_factory: Callable[[Mapping[str, torch.Tensor]], TritonMoeQuantInfo],
+    config: MoeRunnerConfig,
+) -> StandardCombineInput:
+    """Compute resident routes while the cache copy stream prepares the misses."""
+    from sglang.srt.layers.moe.moe_runner.triton_utils.fused_moe import (
+        combine_weighted_expert_outputs,
+        fused_experts_impl,
+    )
+    from sglang.srt.layers.moe.token_dispatcher.standard import StandardCombineInput
+
+    overlap = prepared.overlap
+    assert overlap is not None
+
+    def run_group(dispatch, payload):
+        quant = quant_info_factory(payload)
+        return fused_experts_impl(
+            hidden_states=dispatch.hidden_states,
+            w1=quant.w13_weight,
+            w2=quant.w2_weight,
+            topk_weights=dispatch.topk_output.topk_weights,
+            topk_ids=dispatch.topk_output.topk_ids,
+            b1=quant.b13,
+            b2=quant.b2,
+            use_int4_w4a16=True,
+            w1_scale=quant.w13_scale,
+            w2_scale=quant.w2_scale,
+            w1_zp=quant.w13_zp,
+            w2_zp=quant.w2_zp,
+            block_shape=quant.block_shape,
+            activation=config.activation,
+            is_gated=config.is_gated,
+            apply_router_weight_on_input=config.apply_router_weight_on_input,
+            gemm1_alpha=config.gemm1_alpha,
+            gemm1_limit=config.gemm1_clamp_limit,
+            swiglu_limit=config.swiglu_limit,
+            gate_up_interleaved=config.gate_up_interleaved,
+            inplace=False,
+            filter_expert=True,
+            return_weighted_routes=True,
+        )
+
+    hits = run_group(overlap.resident_dispatch, overlap.resident_payload)
+    torch.cuda.current_stream().wait_event(overlap.miss_ready)
+    misses = run_group(overlap.miss_dispatch, overlap.miss_payload)
+    routes = torch.where(overlap.hit_mask.unsqueeze(-1), hits, misses)
+    output = torch.empty_like(overlap.resident_dispatch.hidden_states)
+    combine_weighted_expert_outputs(routes, output, config.routed_scaling_factor)
+    return StandardCombineInput(hidden_states=output)
 
 
 @register_fused_func("none", "triton")

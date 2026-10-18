@@ -478,6 +478,27 @@ def remap_single_token_expert_ids(
         raise ValueError("single-token expert remapping requires shape [1, top_k]")
     if len(expert_ids_cpu) != expert_ids.shape[1]:
         raise ValueError("CPU expert IDs must match the single-token top-k width")
+    return remap_expert_ids_from_cpu(expert_ids, expert_ids_cpu, expert_to_compact)
+
+
+def requested_experts_from_cpu(
+    expert_ids_cpu: Sequence[int], *, num_experts: int, sort: bool
+) -> list[int]:
+    """Validate synchronized routes before using them to index host weights."""
+    requested = list(dict.fromkeys(expert_ids_cpu))
+    if any(expert < 0 or expert >= num_experts for expert in requested):
+        raise ValueError(f"expert IDs must be in [0, {num_experts}), got {requested}")
+    return sorted(requested) if sort else requested
+
+
+def remap_expert_ids_from_cpu(
+    expert_ids: torch.Tensor,
+    expert_ids_cpu: Sequence[int],
+    expert_to_compact: Mapping[int, int],
+) -> torch.Tensor:
+    """Remap all lanes from one CPU route snapshot, including zero-weight lanes."""
+    if len(expert_ids_cpu) != expert_ids.numel():
+        raise ValueError("CPU expert IDs must match the routing tensor size")
     try:
         compact = [expert_to_compact[int(expert)] for expert in expert_ids_cpu]
     except KeyError as exc:
@@ -510,8 +531,12 @@ class ExpertCacheStats:
     batched_copy_operations: int = 0
     fallback_copy_operations: int = 0
     forwards: int = 0
+    small_batch_forwards: int = 0
+    resident_forwards: int = 0
+    staging_forwards: int = 0
+    overlap_forwards: int = 0
 
-    def add(self, other: "ExpertCacheStats") -> None:
+    def add(self, other: ExpertCacheStats) -> None:
         for name in self.__dataclass_fields__:
             if name == "staging_peak_bytes":
                 value = max(getattr(self, name), getattr(other, name))
@@ -521,12 +546,23 @@ class ExpertCacheStats:
 
 
 @dataclass
+class PreparedExpertOverlap:
+    resident_dispatch: object
+    resident_payload: Mapping[str, torch.Tensor]
+    miss_dispatch: object
+    miss_payload: Mapping[str, torch.Tensor]
+    miss_ready: torch.cuda.Event
+    hit_mask: torch.Tensor
+
+
+@dataclass
 class PreparedExpertPayload:
     dispatch_output: object
     payload: Mapping[str, torch.Tensor]
-    layer_cache: "LayerExpertCache"
+    layer_cache: LayerExpertCache
     used_slots: tuple[int, ...]
     uses_staging: bool
+    overlap: Optional[PreparedExpertOverlap] = None
 
     def mark_kernel_launched(self) -> None:
         self.layer_cache.mark_kernel_launched(
@@ -541,7 +577,7 @@ class LayerExpertCache:
     num_experts: int
     policy_name: str
     lease: int
-    manager: "MoeExpertCacheManager"
+    manager: MoeExpertCacheManager
     payload_format: str = "unknown"
     capacity: int = 0
     resident_payload: dict[str, torch.Tensor] = field(default_factory=dict)
@@ -601,7 +637,10 @@ class MoeExpertCacheManager:
         cross_layer_prefetch: bool = True,
         prefetch_min_ratio: float = 0.5,
         resident_shallow_layers: int = 0,
+        execution: str = "serial",
     ):
+        if execution not in ("serial", "overlap"):
+            raise ValueError("expert cache execution must be 'serial' or 'overlap'")
         if not 0.0 < prefetch_min_ratio <= 1.0:
             raise ValueError("prefetch_min_ratio must be in (0, 1]")
         self.host_budget_bytes = host_budget_bytes
@@ -613,6 +652,7 @@ class MoeExpertCacheManager:
         self.cross_layer_prefetch = cross_layer_prefetch
         self.prefetch_min_ratio = prefetch_min_ratio
         self.resident_shallow_layers = resident_shallow_layers
+        self.execution = execution
         self.reserved_host_bytes = 0
         self.reservation_headroom_bytes = 0
         self._logged_reservation_limit = False
@@ -898,6 +938,8 @@ class MoeExpertCacheManager:
         dispatch_output,
         *,
         is_prefill: bool,
+        is_decode: bool = False,
+        allow_overlap: bool = False,
     ) -> PreparedExpertPayload:
         from sglang.srt.layers.moe.topk import StandardTopKOutput
 
@@ -908,13 +950,27 @@ class MoeExpertCacheManager:
             else tuple(layer_cache.policy.expert_to_slot)
         )
         exact_routes = self.drop_threshold == 0.0
-        single_token_ids_cpu = None
+        expert_ids_cpu = None
+        small_batch = (
+            exact_routes
+            and is_decode
+            and layer_cache.payload_format == "moe_wna16"
+            and topk.topk_ids.ndim == 2
+            and 1 <= topk.topk_ids.shape[0] <= 8
+        )
         if exact_routes:
             weights = topk.topk_weights
             ids = topk.topk_ids
-            if ids.ndim == 2 and ids.shape[0] == 1:
-                single_token_ids_cpu = ids[0].to("cpu").tolist()
-                requested = list(dict.fromkeys(single_token_ids_cpu))
+            if small_batch:
+                expert_ids_cpu = ids.flatten().to("cpu").tolist()
+                requested = requested_experts_from_cpu(
+                    expert_ids_cpu,
+                    num_experts=layer_cache.num_experts,
+                    sort=ids.shape[0] != 1,
+                )
+            elif ids.ndim == 2 and ids.shape[0] == 1:
+                expert_ids_cpu = ids[0].to("cpu").tolist()
+                requested = list(dict.fromkeys(expert_ids_cpu))
             else:
                 requested = torch.unique(ids).to("cpu").tolist()
             dropped_count = 0
@@ -929,13 +985,9 @@ class MoeExpertCacheManager:
             retained = weights > 0
             requested = torch.unique(ids[retained]).to("cpu").tolist()
             dropped_count = int(dropped.sum().item())
-            dropped_mass = float(
-                topk.topk_weights.masked_select(dropped).sum().item()
-            )
+            dropped_mass = float(topk.topk_weights.masked_select(dropped).sum().item())
         direct_resident = (
-            exact_routes
-            and not is_prefill
-            and len(requested) <= layer_cache.capacity
+            exact_routes and not is_prefill and len(requested) <= layer_cache.capacity
         )
         if direct_resident:
             prediction_order = layer_cache.predicted_order
@@ -971,6 +1023,7 @@ class MoeExpertCacheManager:
 
         stats_delta = ExpertCacheStats(
             forwards=1,
+            small_batch_forwards=int(small_batch),
             hits=len(access.hits),
             misses=len(requested) - len(access.hits),
             admissions=len(access.admissions),
@@ -994,6 +1047,7 @@ class MoeExpertCacheManager:
         all_hit = bool(requested) and len(access.hits) == len(requested)
         main_stream = torch.cuda.current_stream()
         if all_hit:
+            stats_delta.resident_forwards = 1
             used_slots = []
             for expert in requested:
                 slot = access.hits[expert]
@@ -1002,10 +1056,8 @@ class MoeExpertCacheManager:
                     main_stream.wait_event(event)
                 used_slots.append(slot)
             remapped = (
-                remap_single_token_expert_ids(
-                    ids, single_token_ids_cpu, access.hits
-                )
-                if single_token_ids_cpu is not None
+                remap_expert_ids_from_cpu(ids, expert_ids_cpu, access.hits)
+                if expert_ids_cpu is not None
                 else remap_expert_ids(ids, access.hits)
             )
             topk = topk._replace(topk_ids=remapped)
@@ -1024,7 +1076,27 @@ class MoeExpertCacheManager:
         if self.copy_stream is None:
             raise RuntimeError("expert cache GPU storage has not been initialized")
 
+        if (
+            self.execution == "overlap"
+            and allow_overlap
+            and small_batch
+            and access.hits
+        ):
+            result = self._prepare_overlap(
+                layer_cache,
+                dispatch_output._replace(topk_output=topk),
+                requested,
+                expert_ids_cpu,
+                access,
+                direct_resident,
+                stats_delta,
+            )
+            self._schedule_cross_layer_prefetch(layer_cache, direct_resident)
+            self._commit_stats(layer_cache, stats_delta)
+            return result
+
         if direct_resident:
+            stats_delta.resident_forwards = 1
             if access.transient or len(access.admissions) != stats_delta.misses:
                 raise RuntimeError(
                     "direct resident execution failed to admit every miss"
@@ -1050,10 +1122,8 @@ class MoeExpertCacheManager:
             main_stream.wait_event(copy_done)
 
             remapped = (
-                remap_single_token_expert_ids(
-                    ids, single_token_ids_cpu, expert_to_slot
-                )
-                if single_token_ids_cpu is not None
+                remap_expert_ids_from_cpu(ids, expert_ids_cpu, expert_to_slot)
+                if expert_ids_cpu is not None
                 else remap_expert_ids(ids, expert_to_slot)
             )
             topk = topk._replace(topk_ids=remapped)
@@ -1083,9 +1153,11 @@ class MoeExpertCacheManager:
             populate_copies = []
             for name, host_tensor in layer_cache.host_payload.items():
                 expert_numel = host_tensor[0].numel()
-                target = self.staging[name].narrow(
-                    0, 0, len(requested) * expert_numel
-                ).view(len(requested), *host_tensor.shape[1:])
+                target = (
+                    self.staging[name]
+                    .narrow(0, 0, len(requested) * expert_numel)
+                    .view(len(requested), *host_tensor.shape[1:])
+                )
                 compact_payload[name] = target
                 for expert in requested:
                     index = compact_index[expert]
@@ -1116,10 +1188,8 @@ class MoeExpertCacheManager:
         main_stream.wait_event(copy_done)
 
         remapped = (
-            remap_single_token_expert_ids(
-                ids, single_token_ids_cpu, compact_index
-            )
-            if single_token_ids_cpu is not None
+            remap_expert_ids_from_cpu(ids, expert_ids_cpu, compact_index)
+            if expert_ids_cpu is not None
             else remap_expert_ids(ids, compact_index)
         )
         topk = topk._replace(topk_ids=remapped)
@@ -1130,6 +1200,7 @@ class MoeExpertCacheManager:
             stats_delta.hits + stats_delta.admissions
         ) * layer_cache.expert_bytes
         stats_delta.staging_peak_bytes = stage_bytes
+        stats_delta.staging_forwards = 1
         result = PreparedExpertPayload(
             prepared_dispatch,
             compact_payload,
@@ -1140,6 +1211,112 @@ class MoeExpertCacheManager:
         self._schedule_cross_layer_prefetch(layer_cache, direct_resident)
         self._commit_stats(layer_cache, stats_delta)
         return result
+
+    def _prepare_overlap(
+        self,
+        layer: LayerExpertCache,
+        dispatch_output,
+        requested: Sequence[int],
+        expert_ids_cpu: Sequence[int],
+        access: CacheAccess,
+        direct_resident: bool,
+        stats: ExpertCacheStats,
+    ) -> PreparedExpertPayload:
+        """Submit misses without inserting their wait ahead of resident compute."""
+        misses = [expert for expert in requested if expert not in access.hits]
+        if direct_resident:
+            if access.transient or len(access.admissions) != len(misses):
+                raise RuntimeError("overlap resident execution must admit every miss")
+            miss_index = access.admissions
+            miss_payload = layer.resident_payload
+        else:
+            miss_index = {expert: index for index, expert in enumerate(misses)}
+            miss_payload = {
+                name: self.staging[name]
+                .narrow(0, 0, len(misses) * tensor[0].numel())
+                .view(len(misses), *tensor.shape[1:])
+                for name, tensor in layer.host_payload.items()
+            }
+
+        # One small upload, before queueing stream waits. -1 is only an internal
+        # inactive lane; the Triton caller must explicitly enable expert filtering.
+        ids = dispatch_output.topk_output.topk_ids
+        group_ids = ids.new_tensor(
+            [
+                [access.hits.get(expert, -1) for expert in expert_ids_cpu],
+                [miss_index.get(expert, -1) for expert in expert_ids_cpu],
+            ],
+            dtype=torch.int32,  # filtered CUDA activation requires int32 IDs
+        ).view(2, *ids.shape)
+        hit_ids, miss_ids = group_ids.unbind(0)
+        hit_mask = hit_ids >= 0
+        main_stream = torch.cuda.current_stream()
+        for event in dict.fromkeys(
+            layer.slot_events[slot] for slot in access.hits.values()
+        ):
+            if event is not None:
+                main_stream.wait_event(event)
+
+        with torch.cuda.stream(self.copy_stream):
+            if not direct_resident and self.staging_event is not None:
+                self.copy_stream.wait_event(self.staging_event)
+            for event in dict.fromkeys(
+                layer.slot_events[slot] for slot in access.admissions.values()
+            ):
+                if event is not None:
+                    self.copy_stream.wait_event(event)
+            copies = [
+                (miss_payload[name][miss_index[expert]], host_tensor[expert])
+                for name, host_tensor in layer.host_payload.items()
+                for expert in misses
+            ]
+            self._submit_copies(copies, stats)
+            if not direct_resident:
+                admission_copies = [
+                    (
+                        layer.resident_payload[name][slot],
+                        miss_payload[name][miss_index[expert]],
+                    )
+                    for name in layer.host_payload
+                    for expert, slot in access.admissions.items()
+                ]
+                self._submit_copies(admission_copies, stats)
+            copy_done = torch.cuda.Event()
+            copy_done.record(self.copy_stream)
+        for slot in access.admissions.values():
+            layer.slot_events[slot] = copy_done
+
+        def group_dispatch(group_ids):
+            return dispatch_output._replace(
+                topk_output=dispatch_output.topk_output._replace(topk_ids=group_ids)
+            )
+
+        stats.h2d_bytes = len(misses) * layer.expert_bytes
+        stats.overlap_forwards = 1
+        if direct_resident:
+            stats.resident_forwards = 1
+        else:
+            stats.staging_forwards = 1
+            stats.d2d_bytes = len(access.admissions) * layer.expert_bytes
+            stats.staging_peak_bytes = sum(
+                tensor_nbytes(t) for t in miss_payload.values()
+            )
+        overlap = PreparedExpertOverlap(
+            group_dispatch(hit_ids),
+            layer.resident_payload,
+            group_dispatch(miss_ids),
+            miss_payload,
+            copy_done,
+            hit_mask,
+        )
+        return PreparedExpertPayload(
+            dispatch_output,
+            miss_payload,
+            layer,
+            tuple(access.hits.values()) + tuple(access.admissions.values()),
+            not direct_resident,
+            overlap,
+        )
 
     def _submit_copies(
         self,
@@ -1272,7 +1449,8 @@ class MoeExpertCacheManager:
                 "prefetch_useful=%d prefetch_wasted=%d "
                 "prefetch_match=%d/%d "
                 "admit=%d evict=%d transient=%d "
-                "route_drop=%d dropped_mass=%.6f prefill_reuse=%d stage_peak=%.3f MiB",
+                "route_drop=%d dropped_mass=%.6f prefill_reuse=%d stage_peak=%.3f MiB "
+                "paths_resident=%d paths_staging=%d paths_overlap=%d small_batch=%d",
                 self.stats.forwards,
                 self.stats.hits,
                 self.stats.misses,
@@ -1295,6 +1473,10 @@ class MoeExpertCacheManager:
                 self.stats.dropped_mass,
                 self.stats.prefill_reuse,
                 self.stats.staging_peak_bytes / 2**20,
+                self.stats.resident_forwards,
+                self.stats.staging_forwards,
+                self.stats.overlap_forwards,
+                self.stats.small_batch_forwards,
             )
             if self.stats.forwards % 10000 == 0:
                 logger.info(
@@ -1345,6 +1527,7 @@ def get_moe_expert_cache_manager() -> MoeExpertCacheManager:
             cross_layer_prefetch=args.moe_expert_cache_cross_layer_prefetch,
             prefetch_min_ratio=args.moe_expert_cache_prefetch_min_ratio,
             resident_shallow_layers=args.moe_expert_resident_shallow_layers,
+            execution=args.moe_expert_cache_execution,
         )
     return _MANAGER
 

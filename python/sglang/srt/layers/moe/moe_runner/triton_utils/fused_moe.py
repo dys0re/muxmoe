@@ -98,6 +98,23 @@ def _use_moe_sum_reduce_torch_compile(num_tokens: int) -> bool:
     return num_tokens <= 32 and not is_batch_invariant_mode_enabled()
 
 
+def combine_weighted_expert_outputs(
+    routes: torch.Tensor,
+    output: torch.Tensor,
+    routed_scaling_factor: Optional[float],
+) -> None:
+    """Reduce weighted CUDA routes in their original top-k order."""
+    factor = 1.0 if routed_scaling_factor is None else routed_scaling_factor
+    if routes.shape[1] == 1 and factor == 1.0:
+        output.copy_(routes[:, 0])
+    elif routes.shape[1] == 2 and factor == 1.0:
+        torch.add(routes[:, 0], routes[:, 1], out=output)
+    elif _use_moe_sum_reduce_torch_compile(routes.shape[0]):
+        moe_sum_reduce_torch_compile(routes, output, factor)
+    else:
+        moe_sum_reduce(routes, output, factor)
+
+
 @register_custom_op(mutates_args=["hidden_states"])
 def inplace_fused_experts(
     hidden_states: torch.Tensor,
@@ -461,6 +478,7 @@ def _fused_moe_kernel_sequence(
     hooks: Optional[Any] = None,
     swiglu_limit: Optional[float] = None,
     gate_up_interleaved: bool = True,
+    return_weighted_routes: bool = False,
 ) -> torch.Tensor:
     """Run the MoE kernel/activation/kernel/combine sequence in a single shot.
 
@@ -486,7 +504,11 @@ def _fused_moe_kernel_sequence(
     )
     total_tokens = num_tokens * topk + padded_tokens
 
-    if no_combine:
+    if return_weighted_routes and (inplace or no_combine):
+        raise ValueError(
+            "weighted route output requires out-of-place, combined semantics"
+        )
+    if no_combine or return_weighted_routes:
         assert not inplace
         out_hidden_states = torch.empty(
             (num_tokens, topk, w2.shape[1]),
@@ -508,6 +530,7 @@ def _fused_moe_kernel_sequence(
     use_fused_moe_sum_all_reduce = (
         get_server_args().enable_fused_moe_sum_all_reduce
         and (not no_combine)
+        and (not return_weighted_routes)
         and (topk > 2)
         and (not use_int8_w8a16)
         and (not use_int4_w4a16)
@@ -695,15 +718,21 @@ def _fused_moe_kernel_sequence(
 
     del intermediate_cache1
 
-    intermediate_cache3 = torch.empty(
-        (num_tokens, topk, w2.shape[1]),
-        device=hidden_states.device,
-        dtype=hidden_states.dtype,
+    intermediate_cache3 = (
+        out_hidden_states
+        if return_weighted_routes
+        else torch.empty(
+            (num_tokens, topk, w2.shape[1]),
+            device=hidden_states.device,
+            dtype=hidden_states.dtype,
+        )
     )
 
     # LoRA hooks force the second kernel to write to intermediate_cache3 so
     # hooks.after_down can inspect/modify it before reduction.
-    _use_intermediate = not no_combine and (topk != 1 or hooks)
+    _use_intermediate = return_weighted_routes or (
+        not no_combine and (topk != 1 or hooks)
+    )
 
     out_slice = None
     if use_fused_moe_sum_all_reduce:
@@ -755,6 +784,9 @@ def _fused_moe_kernel_sequence(
 
     del intermediate_cache2
 
+    if return_weighted_routes:
+        return intermediate_cache3
+
     if routed_scaling_factor is None:
         routed_scaling_factor = 1.0
 
@@ -767,26 +799,10 @@ def _fused_moe_kernel_sequence(
                 out_slice.mul_(routed_scaling_factor)
         elif topk == 1 and routed_scaling_factor == 1.0 and not _use_intermediate:
             pass  # we wrote directly into out_hidden_states
-        elif topk == 2 and routed_scaling_factor == 1.0:
-            torch.add(
-                intermediate_cache3[:, 0],
-                intermediate_cache3[:, 1],
-                out=out_hidden_states,
-            ).squeeze(dim=1)
         else:
-            # According to micro benchmark results, torch.compile can get better performance for small token.
-            if _use_moe_sum_reduce_torch_compile(num_tokens):
-                moe_sum_reduce_torch_compile(
-                    intermediate_cache3.view(*intermediate_cache3.shape),
-                    out_hidden_states,
-                    routed_scaling_factor,
-                )
-            else:
-                moe_sum_reduce(
-                    intermediate_cache3.view(*intermediate_cache3.shape),
-                    out_hidden_states,
-                    routed_scaling_factor,
-                )
+            combine_weighted_expert_outputs(
+                intermediate_cache3, out_hidden_states, routed_scaling_factor
+            )
     elif _is_hip:
         if _use_aiter:
             moe_sum(
@@ -866,6 +882,7 @@ def fused_experts_impl(
     filter_expert: bool = True,
     swiglu_limit: Optional[float] = None,
     gate_up_interleaved: bool = True,
+    return_weighted_routes: bool = False,
 ):
     padded_size = padding_size
     if not (use_fp8_w8a8 or use_int8_w8a8) or block_shape is not None or _use_aiter:
@@ -942,6 +959,7 @@ def fused_experts_impl(
         hooks=None,
         swiglu_limit=swiglu_limit,
         gate_up_interleaved=gate_up_interleaved,
+        return_weighted_routes=return_weighted_routes,
     )
 
 

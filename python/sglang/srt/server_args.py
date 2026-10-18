@@ -2865,6 +2865,14 @@ class ServerArgs:
         "Minimum decode-step lease renewed on a resident expert hit.",
         NS("exec.offload"),
     ] = 3
+    moe_expert_cache_execution: A[
+        Literal["serial", "overlap"],
+        Arg(
+            help="Expert-cache execution: overlap resident compute with missing-expert copies for small GPTQ/Triton decode batches.",
+            choices=("serial", "overlap"),
+        ),
+        NS("exec.offload"),
+    ] = "serial"
     moe_expert_drop_threshold: A[
         float,
         "Drop only cache-miss routes below this weight; per-token top-1 is always retained and weights are renormalized.",
@@ -6306,6 +6314,10 @@ class ServerArgs:
 
     def _handle_moe_expert_offload(self):
         """Validate and normalize the routed-expert cache mode."""
+        if self.moe_expert_cache_execution not in ("serial", "overlap"):
+            raise ValueError(
+                "--moe-expert-cache-execution must be 'serial' or 'overlap'"
+            )
         if self.moe_expert_offload_gb < 0:
             raise ValueError("--moe-expert-offload-gb must be non-negative")
         if self.moe_expert_cache_gb <= 0:
