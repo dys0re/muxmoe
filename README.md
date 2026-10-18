@@ -16,6 +16,8 @@ parts that matter most for a large MoE model on a small host:
 - a bounded GPU expert cache admits, evicts, and prefetches experts at runtime;
 - cross-layer routing prediction overlaps expert transfers with computation;
 - fragmented PCIe copies can be submitted through `cudaMemcpyBatchAsync`;
+- small-batch route metadata uses one CPU snapshot, with optional overlap of
+  resident-expert computation and missing-expert transfers;
 - hybrid linear-attention state uses growable slabs and graph-compatible buffers;
 - breakable decode CUDA Graphs keep dynamic expert operations outside capture;
 - bundled speculative decoding and Mamba state rollback are integrated with the
@@ -40,6 +42,7 @@ runner:
 | Resident layers | 6 shallow MoE layers |
 | Decode graph | Breakable CUDA Graph, dynamic expert operations eager |
 | Cache policy | Lease, lease length 3 |
+| Expert execution | `serial` by default; `overlap` is opt-in for small GPTQ decode batches |
 
 The figures below are configuration-specific reference points, not
 model-independent or hardware-independent claims.
@@ -93,21 +96,54 @@ model-dependent.
 
 ## Qwen 35B-A3B performance
 
-### Batch scaling and prompt locality
+### Latest matched-platform results (2026-10-15)
 
-The BS=8 serving configuration uses eight concurrent requests, 128 generated
-tokens per request, greedy sampling, and excludes prefill/TTFT from decode
-throughput.
+Each cell is the median of **five measured runs after one excluded warmup**,
+using a fresh server for each workload and variant. Every request generates
+128 tokens with greedy sampling, `ignore_eos=true`, and MTP disabled. Aggregate
+decode throughput starts after every request has emitted its first token,
+excluding prefill and TTFT. Server startup, JIT compilation, and diagnostic
+profiling are outside the measurements.
 
-| Workload | Median aggregate decode | Median per-request decode |
-| --- | ---: | ---: |
-| BS=1, tuned non-MTP configuration | 17.89 tok/s | 17.89 tok/s |
-| BS=4, four uniform 64-token requests | 33.47 tok/s | — |
-| BS=8, related prompts | 66.51 tok/s | 8.31 tok/s |
-| BS=8, unrelated prompts | 45.04 tok/s | 5.63 tok/s |
+| Workload | Frozen baseline | Serial metadata (default) | Resident/miss overlap (opt-in) |
+| --- | ---: | ---: | ---: |
+| BS=1, one request | 18.51 tok/s | **18.53 tok/s** | 17.43 tok/s |
+| BS=4, four related requests | 52.24 tok/s | **59.45 tok/s** | 57.80 tok/s |
+| BS=8, related prompts | 68.12 tok/s | 73.08 tok/s | **81.92 tok/s** |
+| BS=8, unrelated prompts | 43.32 tok/s | 44.00 tok/s | **51.40 tok/s** |
 
-The related-prompt batch is 47.69% faster than the unrelated batch. Both use
-the same server configuration; the difference comes from expert locality:
+The default serial path improves BS=4 by **13.81%** and the two BS=8 workloads
+by **7.28% / 1.57%**, while BS=1 stays effectively unchanged (**+0.14%**).
+Overlap improves the two BS=8 workloads by **20.26% / 18.65%**, but reduces
+BS=1 throughput by **5.84%**, so it remains opt-in.
+
+All variants use the cache budgets above, `--moe-expert-drop-threshold 0`,
+adaptive prefetch ratio 0.5, disabled radix cache, seed 41, and breakable decode
+graphs. BS=1/4 use `mem_fraction_static=0.70` and Mamba capacities 5/12;
+BS=8 uses 0.75 and capacity 8. BS=4 uses the first four related prompts with
+128-token outputs; it is a different workload and timing protocol from the
+older uniform 64-token BS=4 experiment.
+
+The [published measurements](benchmark/moe_expert_cache/results/2026-10-15-rtx5060ti.json)
+include prompts, sanitized server commands, every measured throughput and
+latency value, and baseline comparisons. These are new matched-platform
+measurements; changes are calculated against the frozen baseline in the same
+table.
+
+Validation passed 68 focused tests. A separate same-input BS=8 diagnostic
+compared 128 mixed-hit direct-resident executions with serial computation:
+all were elementwise identical, with maximum absolute error 0. Staging is
+covered by the CUDA regression suite. Free-running BS=4/8 outputs are not
+fully token-identical across versions or repeated baseline requests; these
+throughput results do not establish full-model accuracy or fixed-token-trace
+equivalence. All GPU/JIT runs used the RAM guard and `MAX_JOBS=1`; peak effective
+system RAM was **23.10 GiB**, with no watchdog trips or OOM kills.
+
+### Historical locality counters (2026-08-02)
+
+The earlier related/unrelated prompt study measured the following counters at
+equal cache forwards. They illustrate routing locality and are separate from
+the latest throughput measurements above:
 
 | Counter at equal cache forwards | Related | Unrelated |
 | --- | ---: | ---: |
@@ -116,15 +152,16 @@ the same server configuration; the difference comes from expert locality:
 | Demand host-to-device traffic | 74.45 GiB | 148.22 GiB |
 | Cross-layer prefetch match rate | 86.82% | 86.07% |
 
-The important result is that routing locality is now visible at the serving
-level. Batching requests with similar expert demand can be more valuable than
-increasing the nominal GPU cache size.
+These earlier counters show how request locality changes cache hit rates and
+host-to-device traffic at the serving level.
 
-### PCIe copy and prefetch path
+### Historical PCIe copy and prefetch measurements (2026-08-04)
 
-The BS=1 non-MTP performance progression is:
+The earlier BS=1 non-MTP progression below measures whole-request throughput,
+including prefill/TTFT. Its values should not be compared directly with the
+latest decode-only table:
 
-| Variant | Median decode | Change |
+| Variant | Median request throughput | Change |
 | --- | ---: | ---: |
 | Previous tuned baseline | 17.8867 tok/s | — |
 | Batched expert copies | 18.0528 tok/s | +0.93% |
@@ -140,20 +177,23 @@ but moves more speculative bytes and reduces immediate transfer efficiency. The
 default keeps an adaptive prefetch minimum; use a full-width setting only when
 latency is more important than host-to-device traffic.
 
-### Bundled MTP status
+### Bundled MTP status (historical)
 
 Bundled MTP is functional with target GPTQ weights, BF16 draft weights, expert
-offload, GDN state rollback/commit, and breakable decode graphs. It is not yet a
-performance win on a 16 GB GPU:
+offload, GDN state rollback/commit, and breakable decode graphs. The earlier
+whole-request benchmark did not show a performance win on a 16 GB GPU:
 
-| Configuration | Median decode | Acceptance |
+| Configuration | Median request throughput | Acceptance |
 | --- | ---: | ---: |
 | Non-MTP tuned baseline | 17.89 tok/s | — |
 | MTP-2 | 12.91 tok/s | 1.82–1.93 tokens, 0.82–0.93 rate |
 | MTP-3 | 14.12 tok/s | 2.55–2.77 tokens, 0.78–0.89 rate |
 
-The draft layer reduces the target expert-cache budget and wider verification
-activates more unique experts. MTP is included as a working path for further
+That experiment used a smaller target expert cache, and its verification
+forwards were treated as prefill by the expert-cache policy, preventing decode
+admission and prefetch. MTP was not changed or retested in the 2026-10-15
+optimization above; the historical slowdown is not attributed solely to draft
+memory or the wider expert set. MTP is included as a working path for further
 optimization, not as a claimed speedup.
 
 ## How the runtime works
@@ -172,6 +212,12 @@ At decode time, MuxMoE combines:
 3. compact staging for cache misses;
 4. cross-layer route prediction and adaptive prefetch;
 5. batched pointer-to-pointer copies with a safe individual-copy fallback.
+
+For ordinary GPTQ decode batches of up to eight tokens, the serial path reuses
+one CPU route snapshot for deduplication and ID remapping. The opt-in overlap
+path computes resident routes while misses transfer, stages only missing
+experts, and combines the weighted results in the original top-k lane order.
+All-hit and all-miss forwards keep a single computation path.
 
 The cache exposes hit, miss, demand-transfer, prefetch, and wasted-prefetch
 counters so that locality and PCIe behavior are visible at runtime.
@@ -204,10 +250,13 @@ BS=8-oriented server:
 
 ```bash
 export MODEL_PATH=/path/to/Qwen-35B-A3B-GPTQ-Int4
+RUN_NAME="server-$(date +%Y%m%d-%H%M%S)"
 
-MAX_JOBS=1 \
-PYTHONPATH="$PWD/python" \
-python -m sglang.launch_server \
+./profile_output/ram_guard.py \
+  --log "profile_output/${RUN_NAME}.csv" \
+  --command-log "profile_output/${RUN_NAME}.log" \
+  -- env MAX_JOBS=1 PYTHONPATH="$PWD/python" \
+  python -m sglang.launch_server \
   --model-path "$MODEL_PATH" \
   --quantization moe_wna16 \
   --moe-expert-offload-gb 12.5 \
@@ -215,8 +264,12 @@ python -m sglang.launch_server \
   --moe-expert-resident-shallow-layers 6 \
   --moe-expert-cache-policy lease \
   --moe-expert-cache-lease 3 \
+  --moe-expert-drop-threshold 0 \
+  --moe-expert-cache-execution serial \
   --max-running-requests 8 \
   --max-mamba-cache-size 8 \
+  --max-total-tokens 2048 \
+  --random-seed 41 \
   --mem-fraction-static 0.75 \
   --cuda-graph-backend-decode breakable \
   --cuda-graph-max-bs-decode 8 \
@@ -224,6 +277,12 @@ python -m sglang.launch_server \
   --host 0.0.0.0 \
   --port 30000
 ```
+
+To opt into resident/miss overlap, change the execution argument to
+`--moe-expert-cache-execution overlap`. The table above shows its BS=8 benefit
+and BS=1 trade-off; `serial` remains the default. This overlap path supports
+ordinary small-batch GPTQ/Triton decode; prefill and other unsupported cases
+retain their existing execution path.
 
 The server exposes the usual OpenAI-compatible endpoint:
 
